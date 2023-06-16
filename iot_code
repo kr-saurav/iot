@@ -1,0 +1,60 @@
+
+#define BLYNK_PRINT Serial
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+
+BlynkTimer timer;
+char auth[] = "3gKp9IBHHUdMamZaq1SjT5T-wGI-sF8G";
+char ssid[] = "saurav’s machine";
+char pass[] = "123456789";
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+int m;
+
+void setup()
+{
+      Serial.begin(9600);
+      Blynk.begin(auth, ssid, pass);
+      Wire.begin(D2, D1);//connect D2,D1 of nodemcu to SDA and SCL of lcd display;
+      lcd.init();
+      lcd.backlight();// Turn on the blacklight.
+      pinMode(13,OUTPUT);//GPIO 13
+      pinMode(15,OUTPUT);//GPIO 15
+      timer.setInterval(1000L, sendUptime);
+}
+void sendUptime()
+{
+      Blynk.virtualWrite(V1, m);
+}
+void loop()
+{
+      Blynk.run();
+      timer.run();
+      m=analogRead(A0);
+      Serial.println(m);
+        if(m>300)
+        {
+              lcd.clear();
+              lcd.print("Alert! Leakage.");//print a message for gas leakage.
+              lcd.setCursor(0, 1);//change the line.
+              lcd.print("Level:");//print sensor resistance on second line.
+              lcd.print(m);
+              delay(2000);
+              digitalWrite(13,LOW);//GREEN LED off when there is gas leakage(gas level above 300).
+              digitalWrite(15,HIGH);//RED LED on when there is gas leakage(gas level above 300).
+         }
+        else if(m<=300)
+        {
+            lcd.clear();
+            lcd.print("Have nice day");//print a greeting message in case of no leakage.
+            lcd.setCursor(0, 1);//change the line.
+            lcd.print("Level:");//print sensor resistance on second line.
+            lcd.print(m);
+            delay(2000);
+            digitalWrite(13,HIGH);//GREEN LED on when there is no gas leakage(gas level below 300).
+            digitalWrite(15,LOW);//RED LED off when there is no gas leakage(gas level below 300).3
+        }
+}
